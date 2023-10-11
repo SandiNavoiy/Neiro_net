@@ -17,10 +17,10 @@ bias_input_to_hidden = np.zeros((20, 1))  # массив c нулями  раз�
 bias_hidden_to_output = np.zeros((10, 1))
 
 # Обучение нейросети, коррекция весов
-epochs = 3  # количество эпох обучения
+epochs = 10  # количество эпох обучения
 e_loss = 0
 e_correct = 0
-learning_rate = 0.03  # точность
+learning_rate = 0.01  # точность
 
 for epoch in range(epochs):
     print(f"Эпоха № {epoch}")
@@ -82,5 +82,5 @@ output_raw = bias_hidden_to_output + weights_hidden_to_output @ hidden
 output = 1 / (1 + np.exp(-output_raw))
 
 plt.imshow(test_image.reshape(28, 28), cmap="Greys")
-plt.title(f"NN предполагает, что пользовательский номер равен: {output.argmax()}")
+plt.title(f"Нейросеть предполагает, что пользовательский номер равен: {output.argmax()}")
 plt.show()
