@@ -20,7 +20,7 @@ bias_hidden_to_output = np.zeros((10, 1))
 epochs = 3  # количество эпох обучения
 e_loss = 0
 e_correct = 0
-learning_rate = 0.01
+learning_rate = 0.03  # точность
 
 for epoch in range(epochs):
     print(f"Эпоха № {epoch}")
@@ -31,4 +31,32 @@ for epoch in range(epochs):
         # а это 1 указывает на то, что каждый элемент в данном случае будет представлен в виде одного столбца
         image = np.reshape(image, (-1, 1)) # reshape изменение самого массива без изменения его содержания  -  в дмумерный
         label = np.reshape(label, (-1, 1))
+
         # Forward propagation (первый этап обучения)
+        #Данные подаются на ввод
+        hidden_raw = bias_input_to_hidden + weights_input_to_hidden @ image
+        hidden = 1 / (1 + np.exp(-hidden_raw))  # нормализация, сигмойд функция
+
+        # Forward propagation (выходной слой)
+        output_raw = bias_hidden_to_output + weights_hidden_to_output @ hidden
+        output = 1 / (1 + np.exp(-output_raw))
+
+        # потери + накопление ошибки
+        e_loss += 1 / len(output) * np.sum((output - label) ** 2, axis=0)
+        e_correct += int(np.argmax(output) == np.argmax(label))
+
+        # Backpropagation (выходной слой) корректировка весов
+        delta_output = output - label
+        weights_hidden_to_output += -learning_rate * delta_output @ np.transpose(hidden)
+        bias_hidden_to_output += -learning_rate * delta_output
+
+        # Backpropagation (hidden layer)
+        delta_hidden = np.transpose(weights_hidden_to_output) @ delta_output * (hidden * (1 - hidden))
+        weights_input_to_hidden += -learning_rate * delta_hidden @ np.transpose(image)
+        bias_input_to_hidden += -learning_rate * delta_hidden
+
+    # Вывод ошибок
+    print(f"Потери: {round((e_loss[0] / images.shape[0]) * 100, 3)}%")
+    print(f"Точность: {round((e_correct / images.shape[0]) * 100, 3)}%")
+    e_loss = 0
+    e_correct = 0
