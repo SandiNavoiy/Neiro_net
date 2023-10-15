@@ -2,54 +2,61 @@ import numpy as np
 import matplotlib.pyplot as plt
 from keras.models import Sequential
 from keras.layers import Dense
-
+from sklearn.model_selection import train_test_split
 from utils import load_dataset
 
 # Загрузка данных
 images, labels = load_dataset()
 
+# Разделение данных на обучающий и тестовый наборы
+X_train, X_test, y_train, y_test = train_test_split(images, labels, test_size=0.2, random_state=42)
+
 # Создание модели нейронной сети
 model = Sequential()
-model.add(Dense(20, input_shape=(784,), activation='sigmoid'))
-model.add(Dense(64, activation='relu'))  # Дополнительный скрытый слой с 64 нейронами и функцией активации ReLU
-model.add(Dense(32, activation='relu'))  # Еще один скрытый слой с 32 нейронами и функцией активации ReLU
-model.add(Dense(10, activation='sigmoid'))
+model.add(Dense(128, input_shape=(784,), activation='relu'))
+model.add(Dense(64, activation='relu'))
+model.add(Dense(32, activation='relu'))
+model.add(Dense(10, activation='softmax'))
 
 # Компиляция модели
-model.compile(loss='mean_squared_error', optimizer='sgd', metrics=['accuracy'])
-batch_size = 32  # Размер батча (можно настраивать)
+model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+
 # Обучение нейросети
-epochs = 3
-for epoch in range(epochs):
-    print(f"Эпоха № {epoch}")
-    for i in range(0, len(images), batch_size):
-        batch_images = images[i:i+batch_size]
-        batch_labels = labels[i:i+batch_size]
+batch_size = 64
+epochs = 10
 
-        # Преобразование данных в массивы батчей
-        batch_images = np.array(batch_images)
-        batch_labels = np.array(batch_labels)
+history = model.fit(X_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(X_test, y_test))
 
-        # Обучение на батче
-        history = model.fit(batch_images, batch_labels, epochs=1, verbose=0)
-        loss = history.history['loss'][0]
-        accuracy = history.history['accuracy'][0]
-
-    # Вывод ошибок
-    print(f"Потери: {round(loss * 100, 3)}%")
-    print(f"Точность: {round(accuracy * 100, 3)}")
+# # Визуализация результатов
+# plt.figure(figsize=(12, 4))
+# plt.subplot(1, 2, 1)
+# plt.plot(history.history['loss'], label='Training Loss')
+# plt.plot(history.history['val_loss'], label='Validation Loss')
+# plt.xlabel('Эпоха')
+# plt.ylabel('Потери')
+# plt.legend()
+#
+# plt.subplot(1, 2, 2)
+# plt.plot(history.history['accuracy'], label='Training Accuracy')
+# plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+# plt.xlabel('Эпохи')
+# plt.ylabel('Точность')
+# plt.legend()
+#
+# plt.show()
 
 # Загрузка пользовательского изображения
-test_image = plt.imread("custom.jpg", format="jpeg")
-gray = lambda rgb: np.dot(rgb[..., :3], [0.299, 0.587, 0.114])
-test_image = 1 - (gray(test_image).astype("float32") / 255)
-test_image = np.reshape(test_image, (test_image.shape[0] * test_image.shape[1]))
+custom_image = plt.imread("custom.jpg", format="jpeg")
 
-# Предсказание сети для пользовательского изображения
-user_image = test_image.reshape(1, -1)
-prediction = model.predict(user_image)
+# Преобразование изображения в формат, аналогичный обучающим данным
+gray = lambda rgb: np.dot(custom_image[..., :3], [0.299, 0.587, 0.114])
+custom_image = 1 - (gray(custom_image).astype("float32") / 255)
+custom_image = np.reshape(custom_image, (1, 784))  # Предполагается, что изображение имеет размер 28x28 пикселей
 
-plt.imshow(test_image.reshape(28, 28), cmap="Greys")
+# Прогноз сети для пользовательского изображения
+prediction = model.predict(custom_image)
+
+plt.imshow(custom_image.reshape(28, 28), cmap="Greys")
 predicted_digit = np.argmax(prediction)
 plt.title(f"Нейросеть предполагает, что пользовательский номер равен: {predicted_digit}")
 plt.show()
